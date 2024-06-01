@@ -3,12 +3,12 @@ CFLAGS = -std=c17 -Werror -Wall
 SOURCE=$(shell find src -iname '*.c')
 TARGET=hello
 
-dbg: out/dbg/$(TARGET)
+default: out/dbg/$(TARGET)
 out/dbg/$(TARGET): $(SOURCE)
 	mkdir -p $(shell dirname $@)
 	$(CC) $(CFLAGS) -O0 -g -o $@ $^
 
-rel: out/rel/$(TARGET)
+release: out/rel/$(TARGET)
 out/rel/$(TARGET): $(SOURCE)
 	mkdir -p $(shell dirname $@)
 	$(CC) $(CFLAGS) -O2 -s -DNDEBUG -o $@ $^
@@ -25,12 +25,17 @@ run: out/dbg/$(TARGET)
 fmt:
 	find src/ -iname '*.h' -o -iname '*.c' -exec clang-format --verbose -i {} \;
 
+.PHONY: debug
+debug: default
+	gdb --tui out/dbg/$(TARGET)
+
 .PHONY: help
 help:
 	@echo "Targets:"
-	@echo "  dbg      - debug build"
-	@echo "  rel      - release build"
-	@echo "  clean    - delete output"
-	@echo "  run      - run debug build"
-	@echo "  fmt      - format the source"
+	@echo "   default     - compile debug build"
+	@echo "   release     - compile release build"
+	@echo "   run         - run the debug build"
+	@echo "   fmt         - reformat the source code"
+	@echo "   debug       - run debug build in gdb"
+	@echo "   clean       - delete all generated files"
 

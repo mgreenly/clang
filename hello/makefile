@@ -29,6 +29,10 @@ fmt:
 debug: default
 	gdb --tui out/dbg/$(TARGET)
 
+.PHONY: grind
+grind: default
+	valgrind -s out/dbg/$(TARGET)
+
 .PHONY: help
 help:
 	@echo "Targets:"

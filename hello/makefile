@@ -1,4 +1,4 @@
-CC=gcc
+CC ?= gcc
 CFLAGS = -std=c17 -Werror -Wall
 SOURCE=$(shell find src -iname '*.c')
 TARGET=hello

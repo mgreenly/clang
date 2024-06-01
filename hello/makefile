@@ -1,5 +1,13 @@
-CC ?= gcc
-CFLAGS = -std=c17 -Werror -Wall
+ifeq ($(CC), gcc)
+	CFLAGS=-std=c17 -Werror -Wall -fanalyzer
+else ifeq ($(CC), clang)
+	CFLAGS=-std=c17 -Werror -Wall
+else ifeq ($(CC), cc)
+	CFLAGS=
+else
+$(error unknown compiler: $(CC))
+endif
+
 SOURCE=$(shell find src -iname '*.c')
 TARGET=hello
 

@@ -1,25 +1,23 @@
-ifeq ($(CC), gcc)
-	CFLAGS=-std=c17 -Werror -Wall -fanalyzer
-else ifeq ($(CC), clang)
-	CFLAGS=-std=c17 -Werror -Wall
-else ifeq ($(CC), cc)
-	CFLAGS=
-else
-$(error unknown compiler: $(CC))
-endif
-
-SOURCE=$(shell find src -iname '*.c')
 TARGET=hello
+SOURCE=$(sort $(shell find src -iname '*.c' -or -iname '*.h'))
+CFLAGS=-std=c17 -pedantic -Werror -Wall
 
-default: out/dbg/$(TARGET)
-out/dbg/$(TARGET): $(SOURCE)
-	mkdir -p $(shell dirname $@)
-	$(CC) $(CFLAGS) -O0 -g -o $@ $^
+dbg: $(SOURCE) makefile out/dbg
+	$(CC) $(CFLAGS) -O0 -g -o out/dbg/$(TARGET) $(filter %.c, $^)
 
-release: out/rel/$(TARGET)
-out/rel/$(TARGET): $(SOURCE)
-	mkdir -p $(shell dirname $@)
-	$(CC) $(CFLAGS) -O2 -s -DNDEBUG -o $@ $^
+out/dbg:
+	mkdir -p $@
+
+rel: $(SOURCE) makefile out/rel
+	$(CC) $(CFLAGS) -O2 -s -DNDEBUG -o out/rel/$(TARGET) $(filter %.c, $^)
+
+out/rel:
+	mkdir -p $@
+
+sta: $(SOURCE) makefile out/dbg
+	$(CC) $(CFLAGS) -fanalyzer -O0 -g -o out/dbg/$(TARGET) $(filter %.c, $^)
+
+all: dbg sta rel
 
 .PHONY: clean
 clean:
@@ -33,21 +31,23 @@ run: out/dbg/$(TARGET)
 fmt:
 	find src/ -iname '*.h' -o -iname '*.c' -exec clang-format --verbose -i {} \;
 
-.PHONY: debug
-debug: default
+.PHONY: gdb
+gdb: dbg
 	gdb --tui out/dbg/$(TARGET)
 
 .PHONY: grind
-grind: default
+grind: dbg
 	valgrind -s out/dbg/$(TARGET)
 
 .PHONY: help
 help:
 	@echo "Targets:"
-	@echo "   default     - compile debug build"
-	@echo "   release     - compile release build"
-	@echo "   run         - run the debug build"
+	@echo "   dbg         - compile with debug symbols"
+	@echo "   rel         - compile release out"
+	@echo "   all         - out dbg, sta and rel"
+	@echo "   run         - run the debug out"
 	@echo "   fmt         - reformat the source code"
-	@echo "   debug       - run debug build in gdb"
+	@echo "   gdb         - run the dbg out in gdb"
+	@echo "   sta         - compile is -fanalyzer"
 	@echo "   clean       - delete all generated files"
 

@@ -24,6 +24,4 @@ int foo_dec(Foo *foo) {
   return foo->val;
 }
 
-void foo_free(Foo *foo) {
-  free(foo);
-}
+void foo_free(Foo *foo) { free(foo); }

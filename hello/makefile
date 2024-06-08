@@ -27,7 +27,7 @@ out/rel:
 
 all: out/dbg/$(PROG) out/dbg/$(TEST) out/rel/$(PROG)
 
-ctags: $(SOURCE_FILES)
+tags: $(SOURCE_FILES)
 	ctags $^
 
 .PHONY: debug
@@ -36,8 +36,8 @@ debug: out/dbg/$(PROG)
 .PHONY: release
 release: out/rel/$(PROG)
 
-.PHONY: extras
-extras: out/dbg/$(TEST)
+.PHONY: test-runner
+test-runner: out/dbg/$(TEST)
 
 .PHONY: gcov
 gcov: out/rel/$(TEST)
@@ -66,8 +66,9 @@ gdb: dbg
 	gdb --tui out/dbg/$(PROG)
 
 .PHONY: grind
-grind: debug
-	valgrind -s out/dbg/$(PROG)
+grind: out/dbg/$(TEST)
+	valgrind -s $<
+
 
 .PHONY: info
 info:
@@ -83,14 +84,14 @@ info:
 .PHONY: help
 help:
 	@echo "Targets:"
-	@echo "   debug       - compile 'src/$(PROG).c' with debug flags"
-	@echo "   release     - compile 'src/$(PROG).c' with release flags"
-	@echo "   extras      - compile 'src/$(TEST).c'"
-	@echo "   run         - run 'src/$(PROG)'.c'"
-	@echo "   test        - run 'src/$(TEST)'.c'"
-	@echo "   all         - make 'debug', 'extras' and 'release'"
-	@echo "   ctags       - generate ctags"
-	@echo "   fmt         - reformat the source code"
-	@echo "   gdb         - run gdb"
-	@echo "   gcov        - run gcov"
-	@echo "   clean       - delete all generated files"
+	@echo "   debug        - compile 'src/$(PROG).c' with debug flags"
+	@echo "   release      - compile 'src/$(PROG).c' with release flags"
+	@echo "   test-runner  - compile 'src/$(TEST).c'"
+	@echo "   run          - run 'src/$(PROG).c'"
+	@echo "   test         - run 'src/$(TEST).c'"
+	@echo "   all          - make 'debug', 'release' and 'test-runner'"
+	@echo "   tags         - generate ctags"
+	@echo "   fmt          - reformat the source code"
+	@echo "   gdb          - run gdb"
+	@echo "   gcov         - run gcov"
+	@echo "   clean        - delete all generated files"

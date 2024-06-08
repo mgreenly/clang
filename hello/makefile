@@ -1,31 +1,61 @@
-TARGET=hello
-SOURCE=$(sort $(shell find src -iname '*.c' -or -iname '*.h'))
+CFILES=$(sort $(wildcard src/*/*.c))
+HFILES=$(sort $(wildcard src/*/*.h))
+SOURCE_FILES=$(sort $(CFILES) $(HFILES))
+
+PROG=hello
+PROG_FILES=src/$(PROG).c $(SOURCE_FILES)
+
+TEST=test
+TEST_FILES=src/$(TEST).c $(SOURCE_FILES)
+
 CFLAGS=-std=c17 -pedantic -Werror -Wall
 
-dbg: $(SOURCE) makefile out/dbg
-	$(CC) $(CFLAGS) -O0 -g -o out/dbg/$(TARGET) $(filter %.c, $^)
+out/dbg/$(PROG): $(PROG_FILES) makefile out/dbg
+	$(CC) $(CFLAGS) -O0 -g -o $@ $(filter %.c, $^)
+
+out/dbg/$(TEST): $(TEST_FILES) makefile out/dbg
+	$(CC) $(CFLAGS) -fanalyzer -fprofile-arcs -ftest-coverage -O0 -g -o $@ $(filter %.c, $^)
 
 out/dbg:
 	mkdir -p $@
 
-rel: $(SOURCE) makefile out/rel
-	$(CC) $(CFLAGS) -O2 -s -DNDEBUG -o out/rel/$(TARGET) $(filter %.c, $^)
+out/rel/$(PROG): $(PROG_FILES) makefile out/rel
+	$(CC) $(CFLAGS) -O2 -s -DNDEBUG -o $@ $(filter %.c, $^)
 
 out/rel:
 	mkdir -p $@
 
-sta: $(SOURCE) makefile out/dbg
-	$(CC) $(CFLAGS) -fanalyzer -O0 -g -o out/dbg/$(TARGET) $(filter %.c, $^)
+all: out/dbg/$(PROG) out/dbg/$(TEST) out/rel/$(PROG)
 
-all: dbg sta rel
+ctags: $(SOURCE_FILES)
+	ctags $^
+
+.PHONY: debug
+debug: out/dbg/$(PROG)
+
+.PHONY: release
+release: out/rel/$(PROG)
+
+.PHONY: extras
+extras: out/dbg/$(TEST)
+
+.PHONY: gcov
+gcov: out/rel/$(TEST)
+	gcov src/test.c
+
+.PHONY: run
+run: out/dbg/$(PROG)
+	@./$<
+
+.PHONY: test
+test: out/dbg/$(TEST)
+	@./$<
 
 .PHONY: clean
 clean:
 	rm -rf out
-
-.PHONY: run
-run: out/dbg/$(TARGET)
-	@./$^
+	rm -rf tags
+	rm -rf *.gcno
 
 .PHONY: fmt
 fmt:
@@ -33,21 +63,34 @@ fmt:
 
 .PHONY: gdb
 gdb: dbg
-	gdb --tui out/dbg/$(TARGET)
+	gdb --tui out/dbg/$(PROG)
 
 .PHONY: grind
-grind: dbg
-	valgrind -s out/dbg/$(TARGET)
+grind: debug
+	valgrind -s out/dbg/$(PROG)
+
+.PHONY: info
+info:
+	$(info CC=[$(CC)])
+	$(info CFLAGS=[$(CFLAGS)])
+	$(info SOURCE_FILES=[$(SOURCE_FILES)])
+	$(info TEST=[$(TEST)])
+	$(info TEST_FILES=[$(TEST_FILES)])
+	$(info PROG=[$(PROG)])
+	$(info PROG_FILES=[$(PROG_FILES)])
+	@:
 
 .PHONY: help
 help:
 	@echo "Targets:"
-	@echo "   dbg         - compile with debug symbols"
-	@echo "   rel         - compile release out"
-	@echo "   all         - out dbg, sta and rel"
-	@echo "   run         - run the debug out"
+	@echo "   debug       - compile 'src/$(PROG).c' with debug flags"
+	@echo "   release     - compile 'src/$(PROG).c' with release flags"
+	@echo "   extras      - compile 'src/$(TEST).c'"
+	@echo "   run         - run 'src/$(PROG)'.c'"
+	@echo "   test        - run 'src/$(TEST)'.c'"
+	@echo "   all         - make 'debug', 'extras' and 'release'"
+	@echo "   ctags       - generate ctags"
 	@echo "   fmt         - reformat the source code"
-	@echo "   gdb         - run the dbg out in gdb"
-	@echo "   sta         - compile is -fanalyzer"
+	@echo "   gdb         - run gdb"
+	@echo "   gcov        - run gcov"
 	@echo "   clean       - delete all generated files"
-
